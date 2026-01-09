@@ -32,3 +32,9 @@ Thumbs.db
 # Build
 bin/
 dist/
+
+# Documentation (auto-generated)
+docs/src/content/docs/commands/*.md
+docs/dist/
+docs/node_modules/
+docs/.astro/

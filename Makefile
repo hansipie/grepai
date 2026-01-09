@@ -1,4 +1,4 @@
-.PHONY: build install test clean lint run
+.PHONY: build install test clean lint run docs docs-generate docs-build docs-dev
 
 BINARY_NAME=grepai
 VERSION?=0.1.0
@@ -41,3 +41,15 @@ build-darwin:
 
 build-windows:
 	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./cmd/grepai
+
+# Documentation
+docs: docs-build
+
+docs-generate:
+	go run cmd/gendocs/main.go
+
+docs-build: docs-generate
+	cd docs && npm ci && npm run build
+
+docs-dev: docs-generate
+	cd docs && npm install && npm run dev
