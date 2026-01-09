@@ -236,3 +236,80 @@ func (s *PostgresStore) Close() error {
 	s.pool.Close()
 	return nil
 }
+
+func (s *PostgresStore) GetStats(ctx context.Context) (*IndexStats, error) {
+	var stats IndexStats
+
+	// Get file count
+	err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM documents WHERE project_id = $1`,
+		s.projectID,
+	).Scan(&stats.TotalFiles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count documents: %w", err)
+	}
+
+	// Get chunk count and last updated
+	err = s.pool.QueryRow(ctx,
+		`SELECT COUNT(*), COALESCE(MAX(updated_at), '1970-01-01'::timestamp) FROM chunks WHERE project_id = $1`,
+		s.projectID,
+	).Scan(&stats.TotalChunks, &stats.LastUpdated)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count chunks: %w", err)
+	}
+
+	// IndexSize not applicable for Postgres (data stored remotely)
+	stats.IndexSize = 0
+
+	return &stats, nil
+}
+
+func (s *PostgresStore) ListFilesWithStats(ctx context.Context) ([]FileStats, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT path, mod_time, array_length(chunk_ids, 1) FROM documents WHERE project_id = $1`,
+		s.projectID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list files: %w", err)
+	}
+	defer rows.Close()
+
+	var files []FileStats
+	for rows.Next() {
+		var f FileStats
+		var chunkCount *int
+		if err := rows.Scan(&f.Path, &f.ModTime, &chunkCount); err != nil {
+			return nil, fmt.Errorf("failed to scan file: %w", err)
+		}
+		if chunkCount != nil {
+			f.ChunkCount = *chunkCount
+		}
+		files = append(files, f)
+	}
+
+	return files, rows.Err()
+}
+
+func (s *PostgresStore) GetChunksForFile(ctx context.Context, filePath string) ([]Chunk, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, file_path, start_line, end_line, content, hash, updated_at
+		FROM chunks WHERE project_id = $1 AND file_path = $2
+		ORDER BY start_line`,
+		s.projectID, filePath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chunks: %w", err)
+	}
+	defer rows.Close()
+
+	var chunks []Chunk
+	for rows.Next() {
+		var c Chunk
+		if err := rows.Scan(&c.ID, &c.FilePath, &c.StartLine, &c.EndLine, &c.Content, &c.Hash, &c.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan chunk: %w", err)
+		}
+		chunks = append(chunks, c)
+	}
+
+	return chunks, rows.Err()
+}

@@ -31,6 +31,21 @@ type SearchResult struct {
 	Score float32 `json:"score"`
 }
 
+// IndexStats contains statistics about the index
+type IndexStats struct {
+	TotalFiles  int       `json:"total_files"`
+	TotalChunks int       `json:"total_chunks"`
+	IndexSize   int64     `json:"index_size"` // bytes
+	LastUpdated time.Time `json:"last_updated"`
+}
+
+// FileStats contains statistics for a single file
+type FileStats struct {
+	Path       string    `json:"path"`
+	ChunkCount int       `json:"chunk_count"`
+	ModTime    time.Time `json:"mod_time"`
+}
+
 // VectorStore defines the interface for vector storage backends
 type VectorStore interface {
 	// SaveChunks stores multiple chunks atomically
@@ -62,4 +77,13 @@ type VectorStore interface {
 
 	// Close cleanly shuts down the store
 	Close() error
+
+	// GetStats returns index statistics
+	GetStats(ctx context.Context) (*IndexStats, error)
+
+	// ListFilesWithStats returns all files with their chunk counts
+	ListFilesWithStats(ctx context.Context) ([]FileStats, error)
+
+	// GetChunksForFile returns all chunks for a specific file
+	GetChunksForFile(ctx context.Context, filePath string) ([]Chunk, error)
 }

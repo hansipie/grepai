@@ -37,6 +37,7 @@ func init() {
 	rootCmd.AddCommand(watchCmd)
 	rootCmd.AddCommand(searchCmd)
 	rootCmd.AddCommand(agentSetupCmd)
+	rootCmd.AddCommand(statusCmd)
 }
 
 var versionCmd = &cobra.Command{

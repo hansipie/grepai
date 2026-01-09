@@ -238,3 +238,119 @@ func abs(x float32) float32 {
 	}
 	return x
 }
+
+func TestGOBStore_GetStats(t *testing.T) {
+	tmpDir := t.TempDir()
+	indexPath := filepath.Join(tmpDir, "index.gob")
+
+	store := NewGOBStore(indexPath)
+	ctx := context.Background()
+
+	// Add some test data
+	chunks := []Chunk{
+		{ID: "1", FilePath: "file1.go", Content: "test1", UpdatedAt: time.Now()},
+		{ID: "2", FilePath: "file1.go", Content: "test2", UpdatedAt: time.Now()},
+		{ID: "3", FilePath: "file2.go", Content: "test3", UpdatedAt: time.Now()},
+	}
+	err := store.SaveChunks(ctx, chunks)
+	if err != nil {
+		t.Fatalf("failed to save chunks: %v", err)
+	}
+
+	err = store.SaveDocument(ctx, Document{Path: "file1.go", ChunkIDs: []string{"1", "2"}})
+	if err != nil {
+		t.Fatalf("failed to save document: %v", err)
+	}
+	err = store.SaveDocument(ctx, Document{Path: "file2.go", ChunkIDs: []string{"3"}})
+	if err != nil {
+		t.Fatalf("failed to save document: %v", err)
+	}
+
+	stats, err := store.GetStats(ctx)
+	if err != nil {
+		t.Fatalf("GetStats failed: %v", err)
+	}
+
+	if stats.TotalFiles != 2 {
+		t.Errorf("expected 2 files, got %d", stats.TotalFiles)
+	}
+	if stats.TotalChunks != 3 {
+		t.Errorf("expected 3 chunks, got %d", stats.TotalChunks)
+	}
+}
+
+func TestGOBStore_ListFilesWithStats(t *testing.T) {
+	tmpDir := t.TempDir()
+	indexPath := filepath.Join(tmpDir, "index.gob")
+
+	store := NewGOBStore(indexPath)
+	ctx := context.Background()
+
+	err := store.SaveDocument(ctx, Document{Path: "a.go", ChunkIDs: []string{"1", "2"}})
+	if err != nil {
+		t.Fatalf("failed to save document: %v", err)
+	}
+	err = store.SaveDocument(ctx, Document{Path: "b.go", ChunkIDs: []string{"3"}})
+	if err != nil {
+		t.Fatalf("failed to save document: %v", err)
+	}
+
+	files, err := store.ListFilesWithStats(ctx)
+	if err != nil {
+		t.Fatalf("ListFilesWithStats failed: %v", err)
+	}
+
+	if len(files) != 2 {
+		t.Errorf("expected 2 files, got %d", len(files))
+	}
+
+	// Check chunk counts
+	for _, f := range files {
+		if f.Path == "a.go" && f.ChunkCount != 2 {
+			t.Errorf("expected 2 chunks for a.go, got %d", f.ChunkCount)
+		}
+		if f.Path == "b.go" && f.ChunkCount != 1 {
+			t.Errorf("expected 1 chunk for b.go, got %d", f.ChunkCount)
+		}
+	}
+}
+
+func TestGOBStore_GetChunksForFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	indexPath := filepath.Join(tmpDir, "index.gob")
+
+	store := NewGOBStore(indexPath)
+	ctx := context.Background()
+
+	chunks := []Chunk{
+		{ID: "1", FilePath: "file.go", StartLine: 1, EndLine: 10, Content: "chunk1"},
+		{ID: "2", FilePath: "file.go", StartLine: 11, EndLine: 20, Content: "chunk2"},
+	}
+	err := store.SaveChunks(ctx, chunks)
+	if err != nil {
+		t.Fatalf("failed to save chunks: %v", err)
+	}
+
+	err = store.SaveDocument(ctx, Document{Path: "file.go", ChunkIDs: []string{"1", "2"}})
+	if err != nil {
+		t.Fatalf("failed to save document: %v", err)
+	}
+
+	result, err := store.GetChunksForFile(ctx, "file.go")
+	if err != nil {
+		t.Fatalf("GetChunksForFile failed: %v", err)
+	}
+
+	if len(result) != 2 {
+		t.Errorf("expected 2 chunks, got %d", len(result))
+	}
+
+	// Test non-existent file
+	result, err = store.GetChunksForFile(ctx, "nonexistent.go")
+	if err != nil {
+		t.Fatalf("GetChunksForFile failed: %v", err)
+	}
+	if result != nil {
+		t.Error("expected nil for non-existent file")
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"sync"
+	"time"
 )
 
 type GOBStore struct {
@@ -186,6 +187,64 @@ func (s *GOBStore) Stats() (numDocs int, numChunks int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return len(s.documents), len(s.chunks)
+}
+
+func (s *GOBStore) GetStats(ctx context.Context) (*IndexStats, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var lastUpdated time.Time
+	for _, chunk := range s.chunks {
+		if chunk.UpdatedAt.After(lastUpdated) {
+			lastUpdated = chunk.UpdatedAt
+		}
+	}
+
+	// Get file size
+	var size int64
+	if info, err := os.Stat(s.indexPath); err == nil {
+		size = info.Size()
+	}
+
+	return &IndexStats{
+		TotalFiles:  len(s.documents),
+		TotalChunks: len(s.chunks),
+		IndexSize:   size,
+		LastUpdated: lastUpdated,
+	}, nil
+}
+
+func (s *GOBStore) ListFilesWithStats(ctx context.Context) ([]FileStats, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	stats := make([]FileStats, 0, len(s.documents))
+	for _, doc := range s.documents {
+		stats = append(stats, FileStats{
+			Path:       doc.Path,
+			ChunkCount: len(doc.ChunkIDs),
+			ModTime:    doc.ModTime,
+		})
+	}
+	return stats, nil
+}
+
+func (s *GOBStore) GetChunksForFile(ctx context.Context, filePath string) ([]Chunk, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	doc, ok := s.documents[filePath]
+	if !ok {
+		return nil, nil
+	}
+
+	chunks := make([]Chunk, 0, len(doc.ChunkIDs))
+	for _, id := range doc.ChunkIDs {
+		if chunk, ok := s.chunks[id]; ok {
+			chunks = append(chunks, chunk)
+		}
+	}
+	return chunks, nil
 }
 
 // cosineSimilarity calculates the cosine similarity between two vectors
