@@ -19,11 +19,11 @@ type Indexer struct {
 }
 
 type IndexStats struct {
-	FilesIndexed   int
-	FilesSkipped   int
-	ChunksCreated  int
-	FilesRemoved   int
-	Duration       time.Duration
+	FilesIndexed  int
+	FilesSkipped  int
+	ChunksCreated int
+	FilesRemoved  int
+	Duration      time.Duration
 }
 
 func NewIndexer(

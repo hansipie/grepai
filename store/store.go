@@ -19,10 +19,10 @@ type Chunk struct {
 
 // Document represents a file with its chunks
 type Document struct {
-	Path      string    `json:"path"`
-	Hash      string    `json:"hash"`
-	ModTime   time.Time `json:"mod_time"`
-	ChunkIDs  []string  `json:"chunk_ids"`
+	Path     string    `json:"path"`
+	Hash     string    `json:"hash"`
+	ModTime  time.Time `json:"mod_time"`
+	ChunkIDs []string  `json:"chunk_ids"`
 }
 
 // SearchResult represents a search match with its relevance score

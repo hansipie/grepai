@@ -15,12 +15,12 @@ const (
 )
 
 type Config struct {
-	Version  int             `yaml:"version"`
-	Embedder EmbedderConfig  `yaml:"embedder"`
-	Store    StoreConfig     `yaml:"store"`
-	Chunking ChunkingConfig  `yaml:"chunking"`
-	Watch    WatchConfig     `yaml:"watch"`
-	Ignore   []string        `yaml:"ignore"`
+	Version  int            `yaml:"version"`
+	Embedder EmbedderConfig `yaml:"embedder"`
+	Store    StoreConfig    `yaml:"store"`
+	Chunking ChunkingConfig `yaml:"chunking"`
+	Watch    WatchConfig    `yaml:"watch"`
+	Ignore   []string       `yaml:"ignore"`
 }
 
 type EmbedderConfig struct {
@@ -123,7 +123,7 @@ func (c *Config) Save(projectRoot string) error {
 	}
 
 	configPath := GetConfigPath(projectRoot)
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 

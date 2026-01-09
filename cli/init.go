@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	initProvider string
-	initBackend  string
+	initProvider       string
+	initBackend        string
 	initNonInteractive bool
 )
 
