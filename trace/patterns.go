@@ -37,6 +37,15 @@ var languagePatterns = map[string]*LanguagePatterns{
 	".tsx": tsxPatterns,
 	".py":  pythonPatterns,
 	".php": phpPatterns,
+	".c":   cPatterns,
+	".h":   cPatterns,
+	".zig": zigPatterns,
+	".rs":  rustPatterns,
+	".cpp": cppPatterns,
+	".hpp": cppPatterns,
+	".cc":  cppPatterns,
+	".cxx": cppPatterns,
+	".hxx": cppPatterns,
 }
 
 // Go patterns
@@ -223,6 +232,155 @@ var languageKeywords = map[string]map[string]bool{
 		"empty": true, "array": true, "unset": true, "include": true, "require": true,
 		"include_once": true, "require_once": true, "die": true, "exit": true,
 	},
+	"c": {
+		"if": true, "for": true, "while": true, "switch": true, "return": true,
+		"sizeof": true, "typeof": true, "goto": true, "break": true, "continue": true,
+		"malloc": true, "calloc": true, "realloc": true, "free": true, "printf": true,
+		"fprintf": true, "sprintf": true, "scanf": true, "memcpy": true, "memset": true,
+		"strlen": true, "strcmp": true, "strcpy": true, "strcat": true,
+	},
+	"cpp": {
+		"if": true, "for": true, "while": true, "switch": true, "return": true,
+		"new": true, "delete": true, "sizeof": true, "typeof": true, "typeid": true,
+		"throw": true, "try": true, "catch": true, "static_cast": true, "dynamic_cast": true,
+		"const_cast": true, "reinterpret_cast": true, "decltype": true, "noexcept": true,
+	},
+	"zig": {
+		"if": true, "for": true, "while": true, "switch": true, "return": true,
+		"break": true, "continue": true, "unreachable": true, "defer": true, "errdefer": true,
+		"try": true, "catch": true, "orelse": true, "comptime": true, "inline": true,
+		"assert": true, "expect": true, "expectEqual": true, "expectError": true,
+	},
+	"rust": {
+		"if": true, "for": true, "while": true, "loop": true, "match": true, "return": true,
+		"break": true, "continue": true, "panic": true, "assert": true, "assert_eq": true,
+		"vec": true, "Box": true, "Rc": true, "Arc": true, "Some": true, "None": true,
+		"Ok": true, "Err": true, "println": true, "print": true, "format": true,
+	},
+}
+
+// C patterns
+var cPatterns = &LanguagePatterns{
+	Extension: ".c",
+	Language:  "c",
+	Functions: []*regexp.Regexp{
+		// return_type function_name(params) - standard C function
+		regexp.MustCompile(`(?m)^(?:static\s+)?(?:inline\s+)?(?:const\s+)?(?:unsigned\s+)?(?:signed\s+)?(?:struct\s+)?(?:enum\s+)?[A-Za-z_][A-Za-z0-9_]*(?:\s*\*+)?\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*\{`),
+		// void/int/char etc. function_name(params)
+		regexp.MustCompile(`(?m)^(?:void|int|char|short|long|float|double|size_t|ssize_t|bool|_Bool)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*\{`),
+	},
+	Types: []*regexp.Regexp{
+		// typedef struct { ... } TypeName;
+		regexp.MustCompile(`(?m)^typedef\s+(?:struct|union|enum)\s*\{[^}]*\}\s*([A-Za-z_][A-Za-z0-9_]*)\s*;`),
+		// typedef existing_type new_type;
+		regexp.MustCompile(`(?m)^typedef\s+[A-Za-z_][A-Za-z0-9_\s\*]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*;`),
+		// struct StructName {
+		regexp.MustCompile(`(?m)^struct\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{`),
+		// enum EnumName {
+		regexp.MustCompile(`(?m)^enum\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{`),
+	},
+	FunctionCall: regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+	MethodCall:   regexp.MustCompile(`(?:->|\.)\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+}
+
+// Zig patterns
+var zigPatterns = &LanguagePatterns{
+	Extension: ".zig",
+	Language:  "zig",
+	Functions: []*regexp.Regexp{
+		// Top-level: pub fn function_name(params) ReturnType {
+		regexp.MustCompile(`(?m)^(?:pub\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+		// inline fn / export fn / extern fn
+		regexp.MustCompile(`(?m)^(?:pub\s+)?(?:inline\s+|export\s+|extern\s+)fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+	},
+	Methods: []*regexp.Regexp{
+		// Methods inside structs/enums (indented): pub fn method_name(self, ...) or fn method_name(...)
+		regexp.MustCompile(`(?m)^[ \t]+(?:pub\s+)?(?:inline\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+	},
+	Types: []*regexp.Regexp{
+		// const TypeName = struct { (any case for type name)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:packed\s+|extern\s+)?struct\s*(?:\([^)]*\))?\s*\{`),
+		// const TypeName = union { (any case for type name)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:packed\s+|extern\s+)?union\s*(?:\([^)]*\))?\s*\{`),
+		// const TypeName = enum { (any case for type name)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*enum\s*(?:\([^)]*\))?\s*\{`),
+		// const ErrorName = error {
+		regexp.MustCompile(`(?m)^(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*error\s*\{`),
+		// const TypeName = opaque {};
+		regexp.MustCompile(`(?m)^(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*opaque\s*\{`),
+		// Nested types inside structs (indented): pub const NestedType = struct/enum/union {
+		regexp.MustCompile(`(?m)^[ \t]+(?:pub\s+)?const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:packed\s+|extern\s+)?(?:struct|enum|union)\s*(?:\([^)]*\))?\s*\{`),
+	},
+	FunctionCall: regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+	MethodCall:   regexp.MustCompile(`\.([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+}
+
+// Rust patterns
+var rustPatterns = &LanguagePatterns{
+	Extension: ".rs",
+	Language:  "rust",
+	Functions: []*regexp.Regexp{
+		// fn function_name(params) -> ReturnType { (top-level)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?(?:async\s+)?(?:unsafe\s+)?(?:const\s+)?(?:extern\s+"[^"]*"\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^>]*>)?\s*\(`),
+	},
+	Methods: []*regexp.Regexp{
+		// Methods inside impl blocks (indented): pub fn / pub const fn / pub async fn
+		regexp.MustCompile(`(?m)^[ \t]+(?:pub\s+)?(?:async\s+)?(?:unsafe\s+)?(?:const\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^>]*>)?\s*\(`),
+	},
+	Types: []*regexp.Regexp{
+		// struct StructName { or struct StructName; or struct StructName(...)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?struct\s+([A-Za-z_][A-Za-z0-9_]*)(?:<[^>]*>)?\s*(?:where\s+[^{;(]+)?(?:\{|;|\()`),
+		// enum EnumName {
+		regexp.MustCompile(`(?m)^(?:pub\s+)?enum\s+([A-Za-z_][A-Za-z0-9_]*)(?:<[^>]*>)?\s*(?:where\s+[^{]+)?\{`),
+		// type TypeName = ... (type alias)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?type\s+([A-Za-z_][A-Za-z0-9_]*)(?:<[^>]*>)?\s*=`),
+	},
+	Interfaces: []*regexp.Regexp{
+		// trait TraitName { (with optional bounds)
+		regexp.MustCompile(`(?m)^(?:pub\s+)?(?:unsafe\s+)?trait\s+([A-Za-z_][A-Za-z0-9_]*)(?:<[^>]*>)?\s*(?::\s*[^{]+)?\s*\{`),
+	},
+	FunctionCall: regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s*(?:!?\s*)?\(`),
+	MethodCall:   regexp.MustCompile(`\.([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+}
+
+// C++ patterns
+var cppPatterns = &LanguagePatterns{
+	Extension: ".cpp",
+	Language:  "cpp",
+	Functions: []*regexp.Regexp{
+		// return_type function_name(params) - standard C++ function
+		regexp.MustCompile(`(?m)^(?:static\s+)?(?:inline\s+)?(?:virtual\s+)?(?:const\s+)?(?:constexpr\s+)?(?:unsigned\s+)?(?:signed\s+)?[A-Za-z_][A-Za-z0-9_:<>]*(?:\s*[&*]+)?\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:override\s*)?(?:final\s*)?\{`),
+		// void/int/char etc. function_name(params)
+		regexp.MustCompile(`(?m)^(?:void|int|char|short|long|float|double|bool|auto)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*\{`),
+		// template<typename T> return_type function_name (top-level)
+		regexp.MustCompile(`(?m)^template\s*<[^>]*>\s*(?:inline\s+)?[A-Za-z_][A-Za-z0-9_:<>]*(?:\s*[&*]+)?\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+		// Functions inside namespaces (indented)
+		regexp.MustCompile(`(?m)^[ \t]+(?:static\s+)?(?:inline\s+)?(?:void|int|char|short|long|float|double|bool|auto|[A-Za-z_][A-Za-z0-9_:<>]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;)]*\)\s*\{`),
+	},
+	Methods: []*regexp.Regexp{
+		// ClassName::MethodName(params) - out of class definition
+		regexp.MustCompile(`(?m)^[A-Za-z_][A-Za-z0-9_:<>]*(?:\s*[&*]+)?\s+[A-Za-z_][A-Za-z0-9_]*::([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+		// Methods inside class body (indented): return_type method_name(params) { or = default/delete
+		regexp.MustCompile(`(?m)^[ \t]+(?:virtual\s+)?(?:static\s+)?(?:inline\s+)?(?:constexpr\s+)?(?:explicit\s+)?(?:void|int|char|bool|auto|size_t|[A-Za-z_][A-Za-z0-9_:<>]*(?:\s*[&*]+)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;)]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:override\s*)?(?:final\s*)?(?:\{|=)`),
+		// Constructor/Destructor: ClassName(params) or ~ClassName()
+		regexp.MustCompile(`(?m)^[ \t]+(?:explicit\s+)?(?:virtual\s+)?(~?[A-Z][A-Za-z0-9_]*)\s*\([^;)]*\)\s*(?:noexcept\s*)?(?::\s*[^{]+)?\{`),
+	},
+	Classes: []*regexp.Regexp{
+		// class ClassName { (with optional inheritance)
+		regexp.MustCompile(`(?m)^(?:template\s*<[^>]*>\s*)?class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*(?:public|protected|private)\s+[A-Za-z_][A-Za-z0-9_:<>,\s]*)?\s*\{`),
+		// struct StructName { (with optional inheritance)
+		regexp.MustCompile(`(?m)^(?:template\s*<[^>]*>\s*)?struct\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*(?:public|protected|private)\s+[A-Za-z_][A-Za-z0-9_:<>,\s]*)?\s*\{`),
+	},
+	Types: []*regexp.Regexp{
+		// using TypeName = ...
+		regexp.MustCompile(`(?m)^using\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`),
+		// typedef ... TypeName;
+		regexp.MustCompile(`(?m)^typedef\s+[A-Za-z_][A-Za-z0-9_\s\*<>:,]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*;`),
+		// enum class EnumName { or enum EnumName {
+		regexp.MustCompile(`(?m)^enum\s+(?:class\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*[A-Za-z_][A-Za-z0-9_]*)?\s*\{`),
+	},
+	FunctionCall: regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
+	MethodCall:   regexp.MustCompile(`(?:->|\.|\:\:)([A-Za-z_][A-Za-z0-9_]*)\s*\(`),
 }
 
 // IsKeyword checks if a name is a language keyword.

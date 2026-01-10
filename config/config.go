@@ -161,6 +161,9 @@ func DefaultConfig() *Config {
 			"venv",
 			".idea",
 			".vscode",
+			"target",
+			".zig-cache",
+			"zig-out",
 		},
 	}
 }

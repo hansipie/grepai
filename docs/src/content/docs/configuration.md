@@ -61,6 +61,9 @@ scanner:
     - "vendor/"
     - "node_modules/"
     - ".git/"
+    - "target/"
+    - ".zig-cache/"
+    - "zig-out/"
 ```
 
 ## Embedder Options

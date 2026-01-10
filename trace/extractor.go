@@ -286,7 +286,7 @@ func (e *RegexExtractor) buildFunctionBoundaries(content string, patterns *Langu
 // findFunctionEnd finds the end position of a function body.
 func findFunctionEnd(content string, start int, lang string) int {
 	switch lang {
-	case "go", "javascript", "typescript", "php":
+	case "go", "javascript", "typescript", "php", "c", "zig", "rust", "cpp":
 		// Count braces to find function end
 		braceCount := 0
 		inString := false

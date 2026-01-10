@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Extended Language Support for Trace**: Symbol extraction now supports additional languages
+  - C (`.c`, `.h`) - functions, structs, enums, typedefs
+  - Zig (`.zig`) - functions, methods (inside structs/enums), inline/export/extern functions, structs, unions, enums, error sets, opaque types, nested types
+  - Rust (`.rs`) - functions, methods, structs, enums, traits, type aliases
+  - C++ (`.cpp`, `.hpp`, `.cc`, `.cxx`, `.hxx`) - functions, methods, classes, structs, enums
+- **Default ignore patterns** for Zig and Rust build directories: `target`, `.zig-cache`, `zig-out`
+
 ## [0.5.0] - 2026-01-10
 
 ### Added
