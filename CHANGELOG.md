@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-01-21
+
+### Added
+
+- **Cursor Rules Support**: `grepai agent-setup` now supports `.cursor/rules` configuration file (#59)
+  - `.cursor/rules` (Cursor's current standard) takes priority over deprecated `.cursorrules`
+  - Backwards compatibility maintained for existing `.cursorrules` files
+  - Both files are configured if present (idempotence handled by marker detection)
+
 ## [0.16.1] - 2026-01-18
 
 ### Fixed
@@ -267,7 +276,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/yoanbernabeu/grepai/compare/v0.16.1...v0.17.0
+[0.16.1]: https://github.com/yoanbernabeu/grepai/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/yoanbernabeu/grepai/compare/v0.15.1...v0.16.0
 [0.15.1]: https://github.com/yoanbernabeu/grepai/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/yoanbernabeu/grepai/compare/v0.14.0...v0.15.0
