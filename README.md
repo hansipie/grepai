@@ -3,6 +3,9 @@
 [![Go](https://github.com/yoanbernabeu/grepai/actions/workflows/ci.yml/badge.svg)](https://github.com/yoanbernabeu/grepai/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yoanbernabeu/grepai)](https://goreportcard.com/report/github.com/yoanbernabeu/grepai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-yoanbernabeu.github.io%2Fgrepai-blue)](https://yoanbernabeu.github.io/grepai/)
+
+> **[Full documentation available here](https://yoanbernabeu.github.io/grepai/)** — Installation guides, configuration options, AI agent integration, and more.
 
 **A privacy-first, CLI-native way to semantically search your codebase.**
 
