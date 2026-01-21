@@ -1,6 +1,7 @@
 ---
 // Pagefind Search Component
-const basePath = import.meta.env.BASE_URL || '/grepai/';
+const rawBase = import.meta.env.BASE_URL || '/grepai';
+const basePath = rawBase.endsWith('/') ? rawBase : rawBase + '/';
 ---
 
 <div class="search-container">
