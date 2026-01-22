@@ -25,10 +25,10 @@ grepai includes a built-in MCP (Model Context Protocol) server that allows AI ag
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `grepai_search` | Semantic code search | `query` (required), `limit` (default: 10), 'compact' (default: false) |
-| `grepai_trace_callers` | Find callers of a symbol | `symbol` (required), 'compact' (default: false) |
-| `grepai_trace_callees` | Find callees of a symbol | `symbol` (required), 'compact' (default: false) |
-| `grepai_trace_graph` | Build complete call graph | `symbol` (required), `depth` (default: 2), 'compact' (default: false) |
+| `grepai_search` | Semantic code search | `query` (required), `limit` (default: 10), `compact` (default: false) |
+| `grepai_trace_callers` | Find callers of a symbol | `symbol` (required), `compact` (default: false) |
+| `grepai_trace_callees` | Find callees of a symbol | `symbol` (required), `compact` (default: false) |
+| `grepai_trace_graph` | Build complete call graph | `symbol` (required), `depth` (default: 2) |
 | `grepai_index_status` | Check index health | none |
 
 ## Configuration

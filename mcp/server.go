@@ -149,9 +149,6 @@ func (s *Server) registerTools() {
 		mcp.WithNumber("depth",
 			mcp.Description("Maximum depth for graph traversal (default: 2)"),
 		),
-		mcp.WithBoolean("compact",
-			mcp.Description("Return minimal JSON without context (default: false)"),
-		),
 	)
 	s.mcpServer.AddTool(traceGraphTool, s.handleTraceGraph)
 
@@ -462,8 +459,6 @@ func (s *Server) handleTraceGraph(ctx context.Context, request mcp.CallToolReque
 	if depth <= 0 {
 		depth = 2
 	}
-
-	_ = request.GetBool("compact", false)
 
 	// Initialize symbol store
 	symbolStore := trace.NewGOBSymbolStore(config.GetSymbolIndexPath(s.projectRoot))
