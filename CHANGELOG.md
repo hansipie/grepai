@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-01-22
+
+### Added
+
+- **Watcher Performance Optimization**: Skip unchanged files on subsequent launches (#62)
+  - New `last_index_time` field in configuration tracks last indexing timestamp
+  - Files with ModTime before `last_index_time` are skipped, avoiding unnecessary embeddings
+  - Config write throttling (30s) prevents file system overload during active development
+  - Significantly faster subsequent `grepai watch` launches (~1ms vs ~100ms for unchanged codebases)
+  - Fully backward compatible: old configs work normally, optimization kicks in after first watch
+
+### Changed
+
+- `Indexer` now accepts `lastIndexTime` parameter for ModTime-based file skipping
+- `runInitialScan` returns `IndexStats` to enable conditional config updates
+
 ## [0.18.0] - 2026-01-21
 
 ### Added
@@ -296,7 +312,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/yoanbernabeu/grepai/compare/v0.18.0...v0.19.0
+[0.18.0]: https://github.com/yoanbernabeu/grepai/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/yoanbernabeu/grepai/compare/v0.16.1...v0.17.0
 [0.16.1]: https://github.com/yoanbernabeu/grepai/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/yoanbernabeu/grepai/compare/v0.15.1...v0.16.0
