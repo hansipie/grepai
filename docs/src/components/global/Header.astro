@@ -14,13 +14,15 @@ const navItems = [
 <header class="sticky top-0 z-50 w-full border-b border-glass-border bg-surface/80 backdrop-blur-xl">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
-      <!-- Logo -->
-      <a href="/grepai/" class="flex items-center hover:opacity-80 transition-opacity">
-        <Logo size={28} />
-      </a>
+      <!-- Logo (flex-1 to balance) -->
+      <div class="flex-1 flex items-center">
+        <a href="/grepai/" class="flex items-center hover:opacity-80 transition-opacity">
+          <Logo size={28} />
+        </a>
+      </div>
 
-      <!-- Desktop Navigation -->
-      <nav class="hidden lg:flex items-center gap-1">
+      <!-- Desktop Navigation (centered) -->
+      <nav class="hidden lg:flex items-center gap-1 flex-shrink-0">
         {navItems.map((item) => (
           <a
             href={item.href}
@@ -31,8 +33,18 @@ const navItems = [
         ))}
       </nav>
 
-      <!-- Right side -->
-      <div class="flex items-center gap-4">
+      <!-- Right side (flex-1 to balance, justify-end) -->
+      <div class="flex-1 flex items-center justify-end gap-4">
+        <!-- Product Hunt Badge (hidden on mobile) -->
+        <a
+          href="https://www.producthunt.com/products/grepai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-grepai"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden lg:block hover:opacity-90 transition-opacity"
+        >
+          <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1067661&theme=dark&t=1769287924890" alt="grepai - grep for the AI era | Product Hunt" width="140" height="31" />
+        </a>
+
         <!-- Search -->
         <Search />
 
