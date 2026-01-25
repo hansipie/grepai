@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-01-25
+
+### Added
+
+- **Windows PowerShell Installation**: Native PowerShell installation script for Windows users (#73) - @Lisito11
+  - Simple one-liner: `irm https://grepai.dev/install.ps1 | iex`
+  - Automatic PATH configuration
+  - No external dependencies required
+
+### Fixed
+
+- **MCP Server Project Path**: Add optional `project-path` argument to `mcp-serve` command (#76) - @yoanbernabeu
+  - Fixes "failed to find project root" error when launched via Cursor/MCP on Windows
+  - Configuration: `grepai mcp-serve /path/to/your/project`
+  - Fully backward compatible: without argument, uses existing behavior
+
 ## [0.22.0] - 2026-01-24
 
 ### Added
@@ -386,7 +402,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/yoanbernabeu/grepai/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/yoanbernabeu/grepai/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/yoanbernabeu/grepai/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/yoanbernabeu/grepai/compare/v0.20.0...v0.20.1
