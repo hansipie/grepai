@@ -82,6 +82,7 @@ brews:
   - repository:
       owner: yoanbernabeu
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: https://github.com/yoanbernabeu/grepai
     description: "Privacy-first semantic code search CLI"
