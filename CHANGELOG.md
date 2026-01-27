@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-01-27
+
 ### Added
 
-- **Adaptive Rate Limiting for OpenAI**: Auto-adjusts parallelism based on 429 responses, respects Retry-After headers, optional TPM pacing via `WithOpenAITPMLimit`
-- **Parallel OpenAI Embedding**: 3x+ faster indexing with batched API requests and configurable parallelism (`embedder.parallelism`, default: 4)
+- **Adaptive Rate Limiting for OpenAI**: Auto-adjusts parallelism based on 429 responses, respects Retry-After headers, optional TPM pacing via `WithOpenAITPMLimit` (#81) - @ariel-frischer
+- **Parallel OpenAI Embedding**: 3x+ faster indexing with batched API requests and configurable parallelism (`embedder.parallelism`, default: 4) (#81) - @ariel-frischer
+  - New `BatchEmbedder` interface for batch processing
+  - Exponential backoff with jitter for retries
+  - Token bucket rate limiting for proactive TPM management
+  - Real-time progress reporting during batch embedding
 
 ## [0.23.0] - 2026-01-25
 
@@ -407,7 +413,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial public release
 
-[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/yoanbernabeu/grepai/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/yoanbernabeu/grepai/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/yoanbernabeu/grepai/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/yoanbernabeu/grepai/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/yoanbernabeu/grepai/compare/v0.20.1...v0.21.0
