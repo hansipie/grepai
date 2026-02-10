@@ -469,12 +469,12 @@ func safeRename(oldpath, newpath string) error {
 		return nil
 	}
 
-	// Check if the error is "invalid cross-device link" (EXDEV)
-	// On Linux, this is often represented as "cross-device link"
-	// On other Unix-like systems, it might be slightly different, but the intent is the same.
-	if linkErr, ok := err.(*os.LinkError); ok && strings.Contains(linkErr.Error(), "cross-device link") {
-		// Fallback to copy and delete
-		// fmt.Printf("Warning: Rename failed with cross-device link error. Falling back to copy and delete for %s to %s\n", oldpath, newpath) // For debugging
+	// Fallback to copy+delete for cross-device link errors (EXDEV)
+	if isCrossDeviceError(err) {
+		srcInfo, err := os.Stat(oldpath)
+		if err != nil {
+			return fmt.Errorf("failed to stat source file: %w", err)
+		}
 
 		// Open source file
 		src, err := os.Open(oldpath)
@@ -483,8 +483,8 @@ func safeRename(oldpath, newpath string) error {
 		}
 		defer src.Close()
 
-		// Create destination file
-		dst, err := os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755) // Ensure correct permissions
+		// Create destination file preserving source permissions
+		dst, err := os.OpenFile(newpath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
 		if err != nil {
 			return fmt.Errorf("failed to create destination file for copy: %w", err)
 		}
