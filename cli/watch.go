@@ -1982,89 +1982,6 @@ func initializeWorkspaceStore(ctx context.Context, ws *config.Workspace) (store.
 	}
 }
 
-func handleWorkspaceFileEvent(ctx context.Context, ws *config.Workspace, emb embedder.Embedder, st store.VectorStore, event watcher.FileEvent) {
-	// Find which project this file belongs to
-	var matchedProject *config.ProjectEntry
-	for i := range ws.Projects {
-		if strings.HasPrefix(event.Path, ws.Projects[i].Path) {
-			matchedProject = &ws.Projects[i]
-			break
-		}
-	}
-
-	if matchedProject == nil {
-		log.Printf("Warning: received event for unknown project path: %s", event.Path)
-		return
-	}
-
-	log.Printf("[%s][%s] %s", matchedProject.Name, event.Type, event.Path)
-
-	// Load project config
-	projectCfg := config.DefaultConfig()
-	if config.Exists(matchedProject.Path) {
-		var err error
-		projectCfg, err = config.Load(matchedProject.Path)
-		if err != nil {
-			log.Printf("Warning: failed to load config for %s: %v", matchedProject.Name, err)
-		}
-	}
-
-	// Initialize components
-	ignoreMatcher, err := indexer.NewIgnoreMatcher(matchedProject.Path, projectCfg.Ignore, projectCfg.ExternalGitignore)
-	if err != nil {
-		log.Printf("Failed to create ignore matcher: %v", err)
-		return
-	}
-
-	scanner := indexer.NewScanner(matchedProject.Path, ignoreMatcher)
-	chunker := indexer.NewChunker(projectCfg.Chunking.Size, projectCfg.Chunking.Overlap)
-
-	wrappedStore := &projectPrefixStore{
-		store:         st,
-		workspaceName: ws.Name,
-		projectName:   matchedProject.Name,
-		projectPath:   matchedProject.Path,
-	}
-
-	idx := indexer.NewIndexer(matchedProject.Path, wrappedStore, emb, chunker, scanner, projectCfg.Watch.LastIndexTime)
-
-	switch event.Type {
-	case watcher.EventCreate, watcher.EventModify:
-		fileInfo, err := scanner.ScanFile(event.Path)
-		if err != nil {
-			log.Printf("Failed to scan %s: %v", event.Path, err)
-			return
-		}
-		if fileInfo == nil {
-			return
-		}
-
-		needsReindex, err := idx.NeedsReindex(ctx, fileInfo.Path, fileInfo.Hash)
-		if err != nil {
-			log.Printf("Failed to check reindex status for %s: %v", event.Path, err)
-			return
-		}
-		if !needsReindex {
-			log.Printf("Skipped unchanged %s", event.Path)
-			return
-		}
-
-		chunks, err := idx.IndexFile(ctx, *fileInfo)
-		if err != nil {
-			log.Printf("Failed to index %s: %v", event.Path, err)
-			return
-		}
-		log.Printf("Indexed %s (%d chunks)", event.Path, chunks)
-
-	case watcher.EventDelete, watcher.EventRename:
-		if err := idx.RemoveFile(ctx, event.Path); err != nil {
-			log.Printf("Failed to remove %s from index: %v", event.Path, err)
-			return
-		}
-		log.Printf("Removed %s from index", event.Path)
-	}
-}
-
 // projectPrefixStore wraps a VectorStore to prefix file paths with workspace and project name
 type projectPrefixStore struct {
 	store         store.VectorStore
@@ -2078,24 +1995,24 @@ func (p *projectPrefixStore) getPrefix() string {
 	return p.workspaceName + "/" + p.projectName
 }
 
+// toRelSlash computes a forward-slash relative path from the project root.
+// Vector store paths must always use forward slashes regardless of OS.
+func (p *projectPrefixStore) toRelSlash(absPath string) string {
+	if !filepath.IsAbs(absPath) {
+		return filepath.ToSlash(absPath)
+	}
+	rel, err := filepath.Rel(p.projectPath, absPath)
+	if err != nil {
+		return filepath.ToSlash(absPath)
+	}
+	return filepath.ToSlash(rel)
+}
+
 func (p *projectPrefixStore) SaveChunks(ctx context.Context, chunks []store.Chunk) error {
 	prefixedChunks := make([]store.Chunk, len(chunks))
 	for i, c := range chunks {
 		prefixedChunks[i] = c
-		// Determine the relative path
-		var relPath string
-		if filepath.IsAbs(c.FilePath) {
-			// Absolute path: compute relative from project path
-			var err error
-			relPath, err = filepath.Rel(p.projectPath, c.FilePath)
-			if err != nil {
-				relPath = c.FilePath // fallback
-			}
-		} else {
-			// Already relative
-			relPath = c.FilePath
-		}
-		// Prefix with project name
+		relPath := p.toRelSlash(c.FilePath)
 		prefixedPath := p.getPrefix() + "/" + relPath
 		prefixedChunks[i].FilePath = prefixedPath
 		// Also update the chunk ID to include project prefix
@@ -2108,17 +2025,7 @@ func (p *projectPrefixStore) SaveChunks(ctx context.Context, chunks []store.Chun
 }
 
 func (p *projectPrefixStore) DeleteByFile(ctx context.Context, filePath string) error {
-	var relPath string
-	if filepath.IsAbs(filePath) {
-		var err error
-		relPath, err = filepath.Rel(p.projectPath, filePath)
-		if err != nil {
-			relPath = filePath
-		}
-	} else {
-		relPath = filePath
-	}
-	prefixedPath := p.getPrefix() + "/" + relPath
+	prefixedPath := p.getPrefix() + "/" + p.toRelSlash(filePath)
 	return p.store.DeleteByFile(ctx, prefixedPath)
 }
 
@@ -2127,47 +2034,17 @@ func (p *projectPrefixStore) Search(ctx context.Context, queryVector []float32, 
 }
 
 func (p *projectPrefixStore) GetDocument(ctx context.Context, filePath string) (*store.Document, error) {
-	var relPath string
-	if filepath.IsAbs(filePath) {
-		var err error
-		relPath, err = filepath.Rel(p.projectPath, filePath)
-		if err != nil {
-			relPath = filePath
-		}
-	} else {
-		relPath = filePath
-	}
-	prefixedPath := p.getPrefix() + "/" + relPath
+	prefixedPath := p.getPrefix() + "/" + p.toRelSlash(filePath)
 	return p.store.GetDocument(ctx, prefixedPath)
 }
 
 func (p *projectPrefixStore) SaveDocument(ctx context.Context, doc store.Document) error {
-	var relPath string
-	if filepath.IsAbs(doc.Path) {
-		var err error
-		relPath, err = filepath.Rel(p.projectPath, doc.Path)
-		if err != nil {
-			relPath = doc.Path
-		}
-	} else {
-		relPath = doc.Path
-	}
-	doc.Path = p.getPrefix() + "/" + relPath
+	doc.Path = p.getPrefix() + "/" + p.toRelSlash(doc.Path)
 	return p.store.SaveDocument(ctx, doc)
 }
 
 func (p *projectPrefixStore) DeleteDocument(ctx context.Context, filePath string) error {
-	var relPath string
-	if filepath.IsAbs(filePath) {
-		var err error
-		relPath, err = filepath.Rel(p.projectPath, filePath)
-		if err != nil {
-			relPath = filePath
-		}
-	} else {
-		relPath = filePath
-	}
-	prefixedPath := p.getPrefix() + "/" + relPath
+	prefixedPath := p.getPrefix() + "/" + p.toRelSlash(filePath)
 	return p.store.DeleteDocument(ctx, prefixedPath)
 }
 
@@ -2198,7 +2075,7 @@ func (p *projectPrefixStore) ListFilesWithStats(ctx context.Context) ([]store.Fi
 func (p *projectPrefixStore) GetChunksForFile(ctx context.Context, filePath string) ([]store.Chunk, error) {
 	relPath, err := filepath.Rel(p.projectPath, filePath)
 	if err == nil {
-		filePath = p.getPrefix() + "/" + relPath
+		filePath = p.getPrefix() + "/" + filepath.ToSlash(relPath)
 	}
 	return p.store.GetChunksForFile(ctx, filePath)
 }

@@ -315,14 +315,19 @@ func TestHandleWorkspaceFileEvent_SkipsUnchangedFile(t *testing.T) {
 	}
 
 	emb := &countingEmbedder{}
-	ws := &config.Workspace{
-		Name: workspaceName,
-		Projects: []config.ProjectEntry{
-			{Name: projectName, Path: projectPath},
-		},
+	wrappedStore := &projectPrefixStore{
+		store:         st,
+		workspaceName: workspaceName,
+		projectName:   projectName,
+		projectPath:   projectPath,
 	}
+	chunker := indexer.NewChunker(512, 64)
+	idx := indexer.NewIndexer(projectPath, wrappedStore, emb, chunker, scanner, time.Time{})
+	extractor := trace.NewRegexExtractor()
+	cfg := config.DefaultConfig()
+	var lastConfigWrite time.Time
 
-	handleWorkspaceFileEvent(ctx, ws, emb, st, watcher.FileEvent{
+	handleFileEvent(ctx, idx, scanner, extractor, nil, nil, wrappedStore, nil, projectPath, cfg, &lastConfigWrite, nil, watcher.FileEvent{
 		Type: watcher.EventModify,
 		Path: "proj/main.go",
 	})
