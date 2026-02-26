@@ -575,11 +575,27 @@ func showTraceActionCardUIError(displayErr error, title, why, action string) err
 	return displayErr
 }
 
-func outputJSON(result trace.TraceResult) error {
-	enc := json.NewEncoder(os.Stdout)
+// captureJSON serializes a TraceResult to a JSON string without writing to stdout.
+func captureJSON(result trace.TraceResult) string {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(result)
 	return buf.String()
+}
+
+func outputJSON(result trace.TraceResult) error {
+	fmt.Print(captureJSON(result))
+	return nil
+}
+
+func outputTOON(result trace.TraceResult) error {
+	s, err := captureTOON(result)
+	if err != nil {
+		return err
+	}
+	fmt.Print(s)
+	return nil
 }
 
 // captureTOON serializes a TraceResult to a TOON string without writing to stdout.
