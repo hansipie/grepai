@@ -647,6 +647,8 @@ func runWorkspaceSearch(ctx context.Context, query string, projects []string, pa
 	// Workspace mode doesn't have RPG enrichment (no single projectRoot)
 	enrichments := make([]rpgEnrichment, len(results))
 
+	projectRoot, _ := config.FindProjectRoot()
+
 	// JSON output mode
 	if searchJSON {
 		var outputStr string
@@ -660,6 +662,7 @@ func runWorkspaceSearch(ctx context.Context, query string, projects []string, pa
 			return err
 		}
 		fmt.Print(outputStr)
+		recordSearchStats(projectRoot, stats.Search, outputModeFromFlags(searchJSON, searchTOON, searchCompact), len(results), outputStr)
 		return nil
 	}
 
@@ -676,10 +679,9 @@ func runWorkspaceSearch(ctx context.Context, query string, projects []string, pa
 			return err
 		}
 		fmt.Print(outputStr)
+		recordSearchStats(projectRoot, stats.Search, outputModeFromFlags(searchJSON, searchTOON, searchCompact), len(results), outputStr)
 		return nil
 	}
-
-	projectRoot, _ := config.FindProjectRoot()
 
 	if len(results) == 0 {
 		fmt.Println("No results found.")
